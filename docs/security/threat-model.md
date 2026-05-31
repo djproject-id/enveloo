@@ -38,12 +38,21 @@ It is a living document; update it as the system evolves.
 
 ## Known limitations (tracked for hardening)
 
-- HTML sanitization is denylist-based; the sandboxed iframe is the primary containment.
-  An allowlist sanitizer is a candidate for a future pass.
+- HTML sanitization removes dangerous elements (script/iframe/form/...) and event-handler
+  attributes by denylist, and restricts URL attributes to an allowlist of schemes
+  (http/https/mailto). The sandboxed iframe remains the primary containment. A full
+  allowlist sanitizer is a candidate for a future pass.
 - The login timing mitigation uses a fixed dummy hash; a precomputed valid dummy would
   equalize timing more precisely.
-- Rate limiting uses a KV fixed window whose TTL refreshes on write (approximate, not a
-  strict sliding window).
+- **Rate limiting is non-atomic.** It uses a KV read-then-write fixed window whose TTL
+  refreshes on write. Under a concurrent burst the counter can undercount, weakening the
+  limit. Hardening path: a Durable Object atomic counter. Acceptable for single-operator,
+  invite-only deployments.
+- **First-admin bootstrap is not transactional.** The "first user whose email ==
+  ADMIN_EMAIL, when the users table is empty, registers without an invite" check reads the
+  user count and inserts without a transaction, and trusts the email string (no proof of
+  control). Safe for a single operator who deploys and registers immediately; set
+  ADMIN_EMAIL via `wrangler secret` and create the admin account right after deploy.
 
 ## Reporting
 

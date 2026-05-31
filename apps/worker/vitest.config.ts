@@ -14,6 +14,7 @@ export default defineWorkersConfig({
             RESEND_API_KEY: "test-resend",
             TURNSTILE_SECRET: "test-turnstile",
             ADMIN_EMAIL: "admin@example.com",
+            DOMAIN: '["mydomain.com"]',
             TEST_MIGRATIONS: migrations,
           },
         },

@@ -20,6 +20,18 @@ describe("sanitizeEmailHtml", () => {
     expect(out.toLowerCase()).not.toContain("javascript:");
   });
 
+  it("strips data: and vbscript: URLs but keeps http/https/mailto and relative", async () => {
+    const out = await sanitizeEmailHtml(
+      `<a href="data:text/html,x">d</a><a href="vbscript:x">v</a>` +
+        `<a href="https://ok.com">h</a><a href="mailto:a@b.com">m</a><a href="/rel">r</a>`,
+    );
+    expect(out.toLowerCase()).not.toContain("data:");
+    expect(out.toLowerCase()).not.toContain("vbscript:");
+    expect(out).toContain("https://ok.com");
+    expect(out).toContain("mailto:a@b.com");
+    expect(out).toContain('href="/rel"');
+  });
+
   it("removes iframes and forms", async () => {
     const out = await sanitizeEmailHtml(`<iframe src="x"></iframe><form action="y"></form>ok`);
     expect(out.toLowerCase()).not.toContain("<iframe");

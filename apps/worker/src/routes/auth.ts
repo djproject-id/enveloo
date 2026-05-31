@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { getCookie } from "hono/cookie";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { eq, count, and, lt, sql } from "drizzle-orm";
 import type { Env } from "../env";
 import { ok } from "../http/result";
 import { AppError } from "../http/errors";
@@ -20,7 +20,7 @@ import { signJwt, verifyJwt } from "../auth/jwt";
 import { createSession, revokeSession, getSession } from "../auth/session";
 import { db } from "../db/client";
 import { users, inviteKeys } from "../db/schema";
-import { defaultRoleId } from "../auth/rbac";
+import { defaultRoleId, seedRbac } from "../auth/rbac";
 import { requireAuth } from "../http/auth-middleware";
 
 export const auth = new Hono<{ Bindings: Env }>();
@@ -30,7 +30,7 @@ const credsSchema = z.object({
   password: z.string().min(8).max(200),
   turnstileToken: z.string().min(1).max(4000),
 });
-const registerSchema = credsSchema.extend({ inviteCode: z.string().min(1).max(200) });
+const registerSchema = credsSchema.extend({ inviteCode: z.string().min(1).max(200).optional() });
 
 function clientIp(c: { req: { header: (k: string) => string | undefined } }): string {
   return c.req.header("cf-connecting-ip") ?? "0.0.0.0";
@@ -59,16 +59,41 @@ auth.post("/register", async (c) => {
   }
 
   const d = db(c.env.DB);
-  const invite = await d.select().from(inviteKeys).where(eq(inviteKeys.code, body.inviteCode)).get();
-  if (!invite || invite.uses >= invite.maxUses) {
-    throw new AppError("Invalid invite code", 400, "INVITE");
+  // Idempotent RBAC seed — no-ops if roles/permissions already exist.
+  await seedRbac(d);
+
+  const userCountRows = await d.select({ n: count() }).from(users);
+  const userCount = userCountRows[0]?.n ?? 0;
+  const isFirstAdmin =
+    userCount === 0 && body.email.toLowerCase() === (c.env.ADMIN_EMAIL ?? "").toLowerCase();
+
+  let roleId: number;
+  let inviteIdToConsume: number | null = null;
+
+  if (isFirstAdmin) {
+    // First user is the admin — no invite required.
+    roleId = await defaultRoleId(d);
+
+    const existing = await d.select().from(users).where(eq(users.email, body.email)).get();
+    if (existing) throw new AppError("Email already registered", 409, "EMAIL_TAKEN");
+  } else {
+    // All subsequent registrations require a valid invite code.
+    if (!body.inviteCode) {
+      throw new AppError("Invalid invite code", 400, "INVITE");
+    }
+    const invite = await d.select().from(inviteKeys).where(eq(inviteKeys.code, body.inviteCode)).get();
+    if (!invite || invite.uses >= invite.maxUses) {
+      throw new AppError("Invalid invite code", 400, "INVITE");
+    }
+
+    const existing = await d.select().from(users).where(eq(users.email, body.email)).get();
+    if (existing) throw new AppError("Email already registered", 409, "EMAIL_TAKEN");
+
+    roleId = invite.roleId > 0 ? invite.roleId : await defaultRoleId(d);
+    inviteIdToConsume = invite.id;
   }
 
-  const existing = await d.select().from(users).where(eq(users.email, body.email)).get();
-  if (existing) throw new AppError("Email already registered", 409, "EMAIL_TAKEN");
-
   const { hash, salt } = await hashPassword(body.password);
-  const roleId = invite.roleId > 0 ? invite.roleId : await defaultRoleId(d);
   await d
     .insert(users)
     .values({
@@ -80,7 +105,16 @@ auth.post("/register", async (c) => {
       createdAt: Math.floor(Date.now() / 1000),
     })
     .run();
-  await d.update(inviteKeys).set({ uses: invite.uses + 1 }).where(eq(inviteKeys.id, invite.id)).run();
+
+  // Consume the invite only AFTER the user row is created, and atomically cap
+  // it at maxUses so concurrent redemptions can't exceed the limit.
+  if (inviteIdToConsume !== null) {
+    await d
+      .update(inviteKeys)
+      .set({ uses: sql`${inviteKeys.uses} + 1` })
+      .where(and(eq(inviteKeys.id, inviteIdToConsume), lt(inviteKeys.uses, inviteKeys.maxUses)))
+      .run();
+  }
 
   return c.json(ok({ registered: true }), 201);
 });

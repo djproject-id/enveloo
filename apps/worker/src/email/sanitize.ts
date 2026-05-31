@@ -12,6 +12,17 @@ const DROP_TAGS = [
 
 const URL_ATTRS = new Set(["href", "src", "action", "formaction", "background"]);
 
+// Allowlist of URL schemes. Anything with another explicit scheme
+// (javascript:, data:, vbscript:, blob:, file:, ...) is stripped. Relative and
+// anchor URLs (no scheme) are allowed.
+const ALLOWED_URL_SCHEMES = new Set(["http:", "https:", "mailto:"]);
+
+function hasDisallowedScheme(value: string): boolean {
+  const match = /^\s*([a-z][a-z0-9+.-]*:)/i.exec(value);
+  if (!match) return false; // no scheme → relative/anchor URL, allowed
+  return !ALLOWED_URL_SCHEMES.has(match[1]!.toLowerCase());
+}
+
 export async function sanitizeEmailHtml(html: string): Promise<string> {
   let rewriter = new HTMLRewriter();
 
@@ -31,7 +42,7 @@ export async function sanitizeEmailHtml(html: string): Promise<string> {
         const n = name.toLowerCase();
         if (n.startsWith("on")) {
           toRemove.push(name);
-        } else if (URL_ATTRS.has(n) && /^\s*javascript:/i.test(value ?? "")) {
+        } else if (URL_ATTRS.has(n) && hasDisallowedScheme(value ?? "")) {
           toRemove.push(name);
         }
       }

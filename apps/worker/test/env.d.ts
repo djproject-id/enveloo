@@ -9,6 +9,7 @@ declare module "cloudflare:test" {
     RESEND_API_KEY: string;
     TURNSTILE_SECRET: string;
     ADMIN_EMAIL: string;
+    DOMAIN: string;
     TEST_MIGRATIONS: D1Migration[];
   }
 }

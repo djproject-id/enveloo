@@ -44,6 +44,15 @@ export function requireAuth() {
   });
 }
 
+export function requireAdmin() {
+  return createMiddleware<{ Bindings: Env }>(async (c, next) => {
+    const auth = c.get("auth");
+    if (!auth) throw new AppError("Not authenticated", 401, "AUTH");
+    if (!auth.adm) throw new AppError("Forbidden", 403, "FORBIDDEN");
+    await next();
+  });
+}
+
 export function requirePermission(permission: string) {
   return createMiddleware<{ Bindings: Env }>(async (c, next) => {
     const auth = c.get("auth");

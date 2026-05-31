@@ -72,6 +72,16 @@ curl https://<your-worker-domain>/api/health
 # {"success":true,"data":{"ok":true,"db":true}}
 ```
 
+## First admin
+
+On a fresh deploy the database contains no users. The account whose email exactly matches
+the `ADMIN_EMAIL` secret can register **once without an invite code** — that is the only
+way to bootstrap access. After that first registration, every subsequent registration
+(including a repeat attempt with the admin email) requires a valid invite code.
+
+RBAC (the default role and its permissions) is seeded automatically on the first
+registration request; no separate init step or endpoint is needed.
+
 ## Notes
 
 - Secrets are managed entirely through `wrangler secret` and never committed.

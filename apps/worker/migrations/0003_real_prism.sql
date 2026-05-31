@@ -1,0 +1,1 @@
+ALTER TABLE `emails` ADD `direction` text DEFAULT 'received' NOT NULL;

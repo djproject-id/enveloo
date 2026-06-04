@@ -11,7 +11,18 @@ can be revoked.
 ![License](https://img.shields.io/badge/license-AGPL--3.0-yellow?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-Cloudflare%20Workers-blue?style=flat-square)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-44%20passing-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-55%20passing-brightgreen?style=flat-square)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
+[![Good first issues](https://img.shields.io/github/issues/djproject-id/enveloo/good%20first%20issue?style=flat-square&label=good%20first%20issues&color=7057ff)](https://github.com/djproject-id/enveloo/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
+[![Stars](https://img.shields.io/github/stars/djproject-id/enveloo?style=flat-square)](https://github.com/djproject-id/enveloo/stargazers)
+
+* * *
+
+## Screenshots
+
+| Inbox | Addresses | Admin invites |
+| --- | --- | --- |
+| ![Inbox](docs/images/inbox.png) | ![Address management](docs/images/accounts.png) | ![Admin invites](docs/images/invites.png) |
 
 * * *
 
@@ -38,7 +49,7 @@ Miniflare simulates D1, KV, and R2.
 cd apps/worker
 npm install
 npm run db:migrate:local     # apply migrations to the local D1
-npm test                     # 44 tests across 19 files
+npm test                     # 55 tests across 21 files
 npm run dev                  # http://localhost:8787
 ```
 
@@ -108,7 +119,7 @@ Full details: [`docs/security/threat-model.md`](docs/security/threat-model.md).
 │  │  │  └─ db/                # Drizzle schema + client
 │  │  ├─ migrations/           # generated SQL
 │  │  └─ test/                 # Vitest (unit + integration)
-│  └─ web/                     # Vue 3 web app                              (planned)
+│  └─ web/                     # Vue 3 + Vite + Tailwind SPA (login, inbox, composer, admin)
 └─ docs/                       # architecture, configuration, deployment, security
 ```
 
@@ -138,16 +149,24 @@ Secrets (`JWT_SECRET`, `RESEND_API_KEY`, `TURNSTILE_SECRET`, `ADMIN_EMAIL`) are 
 
 ## Status
 
-The secure **backend MVP is complete and tested** — foundation, authentication & RBAC,
-receive & read, compose & send. Next: the Vue web app, an account-management API, and the
-production deployment pass.
+Both the secure **backend** (auth & RBAC, receive/read, compose/send, account management,
+admin invites) and the **Vue 3 web app** (login, inbox, sandboxed-iframe reader, composer,
+address + invite management) are built and tested — 55 worker tests passing. Next: serve
+the SPA from the Worker for a single deploy, then the production deployment pass.
 
 * * *
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). Report security issues privately per
-[`SECURITY.md`](SECURITY.md).
+Contributions are welcome — from typo fixes to new features. Start with
+[`CONTRIBUTING.md`](CONTRIBUTING.md), then pick up a
+[**good first issue**](https://github.com/djproject-id/enveloo/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
+or something tagged
+[**help wanted**](https://github.com/djproject-id/enveloo/issues?q=is%3Aopen+label%3A%22help+wanted%22).
+Have a question or idea? Open a [Discussion](https://github.com/djproject-id/enveloo/discussions).
+Please report security issues privately per [`SECURITY.md`](SECURITY.md).
+
+If Enveloo is useful to you, a ⭐ helps other people find it.
 
 * * *
 

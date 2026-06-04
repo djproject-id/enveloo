@@ -1,0 +1,43 @@
+name: Bug report
+description: Report a problem so we can fix it
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please do **not** include secrets
+        (JWT_SECRET, API keys, tokens) in this report.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, including what you expected instead.
+      placeholder: When I ... I expected ... but instead ...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Run ...
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version, OS, and whether local (Miniflare) or deployed to Cloudflare.
+      placeholder: "Node 22, Windows 11, local dev"
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Worker logs, test output, or browser console errors (secrets removed).
+      render: shell
+    validations:
+      required: false
